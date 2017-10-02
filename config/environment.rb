@@ -10,6 +10,9 @@ Dir[File.join(File.dirname(__FILE__), "../lib/support", "*.rb")].each {|f| requi
 DBRegistry[ENV["PLAYLISTER_ENV"]].connect!
 DB = ActiveRecord::Base.connection
 
+old_logger = ActiveRecord::Base.logger
+ActiveRecord::Base.logger = nil
+
 if ENV["PLAYLISTER_ENV"] == "test"
   ActiveRecord::Migration.verbose = false
 end
@@ -19,7 +22,7 @@ def migrate_db
     DB.execute("DROP TABLE #{table}")
   end
 
-  Dir[File.join(File.dirname(__FILE__), "../db/migrate", "*.rb")].each do |f| 
+  Dir[File.join(File.dirname(__FILE__), "../db/migrate", "*.rb")].each do |f|
     require f
     migration = Kernel.const_get(f.split("/").last.split(".rb").first.gsub(/\d+/, "").split("_").collect{|w| w.strip.capitalize}.join())
     migration.migrate(:up)
@@ -30,4 +33,10 @@ def drop_db
   DB.tables.each do |table|
     DB.execute("DROP TABLE #{table}")
   end
+end
+
+def rollback_db
+  step = ENV['STEP'] ? ENV['STEP'].to_i : 1
+  version = ActiveRecord::Migrator.current_version - step
+  ActiveRecord::Migrator.migrate('db/migrate/', version)
 end

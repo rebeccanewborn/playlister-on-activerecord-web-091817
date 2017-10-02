@@ -10,9 +10,15 @@ namespace :db do
     migrate_db
   end
 
-  task :drop => :environment do 
+  task :drop => :environment do
     drop_db
   end
+
+  desc 'Rolls the schema back to the previous version. Specify the number of steps with STEP=n'
+  task :rollback => :environment do
+    rollback_db
+  end
+
 end
 
 task :console => :environment do
